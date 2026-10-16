@@ -49,3 +49,19 @@ def test_validation_selection_matches_trials():
 def test_threshold_tuning_prefers_recall_when_f2_improves():
     y=np.array([0,0,1,1]); p=np.array([.1,.25,.4,.8])
     assert choose_threshold(y,p,[.3,.5])==.3
+
+
+def test_saved_baseline_reproduces_predictions():
+    from PIL import Image
+    from casting_ml.data import read_rgb
+    parameters=np.load("artifacts/baseline.npz",allow_pickle=False)
+    config=json.loads(Path("config.json").read_text())
+    dataset=Path(config["dataset_root"])
+    if not dataset.exists():
+        pytest.skip("Full dataset is external and is not distributed in the repository")
+    with Path("reports/test_predictions.csv").open() as stream:
+        rows=list(csv.DictReader(stream))[:20]
+    x=np.stack([np.asarray(read_rgb(dataset/r["path"]).convert("L").resize((32,32),Image.Resampling.BILINEAR),dtype=np.float32).ravel()/255.0 for r in rows])
+    logits=((x-parameters["mean"])/parameters["scale"])@parameters["coef"].T+parameters["intercept"]
+    probability=1/(1+np.exp(-logits.ravel()))
+    assert np.max(np.abs(probability-np.array([float(r["baseline_probability"]) for r in rows])))<1e-6

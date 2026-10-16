@@ -6,4 +6,5 @@ __pycache__/
 data/
 cache/
 *.log
+!reports/training.log
 .publishing/

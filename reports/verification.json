@@ -1,0 +1,12 @@
+{
+  "local_tests": {
+    "passed": 15,
+    "failed": 0,
+    "command": "python -m pytest -q"
+  },
+  "github_ci_initial": "passed",
+  "local_browser": "passed: both class buttons, file upload, invalid input, Python parity",
+  "container": "passed: build, health, both classes, non-root UID 1000",
+  "original_repository": "git status shows only the untracked new independent project directory; no tracked changes",
+  "recorded_at_utc": "2026-10-16T17:33:40.239589+00:00"
+}
