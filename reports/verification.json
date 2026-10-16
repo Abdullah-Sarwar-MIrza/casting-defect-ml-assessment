@@ -8,5 +8,10 @@
   "local_browser": "passed: both class buttons, file upload, invalid input, Python parity",
   "container": "passed: build, health, both classes, non-root UID 1000",
   "original_repository": "git status shows only the untracked new independent project directory; no tracked changes",
-  "recorded_at_utc": "2026-10-16T17:33:40.239589+00:00"
+  "recorded_at_utc": "2026-10-16T17:33:40.239589+00:00",
+  "github_ci": "success",
+  "public_deployment": "verified with real browser inference",
+  "live_url": "https://abdullah-sarwar-mirza.github.io/casting-defect-ml-assessment/",
+  "live_verification_time_utc": "2026-10-16T17:34:38Z",
+  "maximum_browser_python_probability_difference": 1.710653305053711e-05
 }
