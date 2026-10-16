@@ -1,0 +1,8 @@
+*
+!requirements.txt
+!casting_ml/
+!casting_ml/*.py
+!docs/
+!docs/model.onnx
+!artifacts/
+!artifacts/metadata.json

@@ -1,0 +1,8 @@
+[project]
+name = "casting-defect-ml-assessment"
+version = "1.0.0"
+description = "Reproducible casting defect classification and public inference"
+requires-python = ">=3.11"
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

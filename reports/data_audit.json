@@ -1,0 +1,46 @@
+{
+  "dataset_root_recorded_as": "external; see config.json",
+  "total_images": 7348,
+  "original_distribution": {
+    "train": {
+      "ok_front": 2875,
+      "def_front": 3758
+    },
+    "test": {
+      "ok_front": 262,
+      "def_front": 453
+    }
+  },
+  "split_distribution": {
+    "train": {
+      "ok_front": 2249,
+      "def_front": 3006
+    },
+    "validation": {
+      "ok_front": 562,
+      "def_front": 752
+    },
+    "test": {
+      "ok_front": 262,
+      "def_front": 453
+    }
+  },
+  "dimensions": {
+    "300x300": 7348
+  },
+  "corrupt_files": [],
+  "excluded_count": 64,
+  "duplicate_groups": 64,
+  "test_duplicate_groups": 0,
+  "conflicting_label_groups": [],
+  "limitations": [
+    "No original physical-part or capture-session IDs are available.",
+    "Exact decoded-pixel duplicates are checked; transformed near duplicates cannot be ruled out.",
+    "The alternate 512x512 dataset is not mixed into this experiment.",
+    "Folder labels are assumed; visual review cannot certify every label."
+  ],
+  "exclusions_by_reason": {
+    "excluded_test_overlap": 64
+  },
+  "train_test_duplicate_groups": 64
+}

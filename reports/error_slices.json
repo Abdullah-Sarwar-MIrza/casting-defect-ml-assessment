@@ -1,0 +1,32 @@
+{
+  "brightness_low": {
+    "count": 238,
+    "errors": 0,
+    "false_negatives": 0
+  },
+  "brightness_medium": {
+    "count": 238,
+    "errors": 3,
+    "false_negatives": 2
+  },
+  "brightness_high": {
+    "count": 239,
+    "errors": 2,
+    "false_negatives": 0
+  },
+  "contrast_low": {
+    "count": 238,
+    "errors": 1,
+    "false_negatives": 0
+  },
+  "contrast_medium": {
+    "count": 238,
+    "errors": 4,
+    "false_negatives": 2
+  },
+  "contrast_high": {
+    "count": 239,
+    "errors": 0,
+    "false_negatives": 0
+  }
+}

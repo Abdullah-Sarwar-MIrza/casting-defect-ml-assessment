@@ -1,0 +1,60 @@
+{
+  "baseline": {
+    "model": "pixels_logistic",
+    "C": 1.0,
+    "threshold": 0.25,
+    "validation": {
+      "accuracy": 0.8881278538812786,
+      "balanced_accuracy": 0.8770845952903763,
+      "macro_f1": 0.8833098633667349,
+      "defect_precision": 0.864897466827503,
+      "defect_recall": 0.9534574468085106,
+      "defect_f2": 0.9343236903831118,
+      "roc_auc": 0.9604589422276064,
+      "defect_average_precision": 0.9753141041151207,
+      "brier_score": 0.0727168619632721,
+      "confusion_matrix": [
+        [
+          450,
+          112
+        ],
+        [
+          35,
+          717
+        ]
+      ]
+    },
+    "fit_seconds": 2.1768678999505937,
+    "iterations": 492
+  },
+  "transfer": {
+    "model": "resnet18_frozen_logistic",
+    "C": 0.1,
+    "threshold": 0.5,
+    "validation": {
+      "accuracy": 0.9923896499238964,
+      "balanced_accuracy": 0.9929014916332248,
+      "macro_f1": 0.9922374375273226,
+      "defect_precision": 0.9973190348525469,
+      "defect_recall": 0.9893617021276596,
+      "defect_f2": 0.9909429941395844,
+      "roc_auc": 0.999432119330658,
+      "defect_average_precision": 0.9995969161412461,
+      "brier_score": 0.007184983696788549,
+      "confusion_matrix": [
+        [
+          560,
+          2
+        ],
+        [
+          8,
+          744
+        ]
+      ]
+    },
+    "fit_seconds": 0.382493200013414,
+    "iterations": 49
+  },
+  "selection_rule": "maximize validation macro F1; threshold tuned for validation defect F2",
+  "selected_model": "resnet18_frozen_logistic"
+}

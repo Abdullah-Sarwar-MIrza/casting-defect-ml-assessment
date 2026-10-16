@@ -1,0 +1,27 @@
+{
+  "url": "http://127.0.0.1:53110/",
+  "examples": [
+    {
+      "probability": 0.03151175379753113,
+      "defective": false,
+      "threshold": 0.5,
+      "example": "ok",
+      "python_probability": 0.031528860330581665,
+      "absolute_difference": 1.710653305053711e-05
+    },
+    {
+      "probability": 0.9978177547454834,
+      "defective": true,
+      "threshold": 0.5,
+      "example": "defective",
+      "python_probability": 0.9978277087211609,
+      "absolute_difference": 9.953975677490234e-06
+    }
+  ],
+  "page_errors": [],
+  "failed_requests": [],
+  "upload_test": "passed",
+  "invalid_upload_test": "passed",
+  "browser": "Microsoft Edge / Chromium",
+  "verified_at_utc": "2026-10-16T17:18:36Z"
+}

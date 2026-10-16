@@ -1,0 +1,138 @@
+{
+  "config": {
+    "seed": 42,
+    "dataset_root": "../casting_data/casting_data",
+    "validation_fraction": 0.2,
+    "image_size": 128,
+    "batch_size": 64,
+    "cpu_threads": 4,
+    "baseline_C": [
+      0.001,
+      0.01,
+      0.1,
+      1.0
+    ],
+    "transfer_C": [
+      0.01,
+      0.1,
+      1.0,
+      10.0
+    ],
+    "threshold_grid": [
+      0.1,
+      0.15,
+      0.2,
+      0.25,
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.55,
+      0.6,
+      0.65,
+      0.7,
+      0.75,
+      0.8,
+      0.85,
+      0.9
+    ],
+    "classes": [
+      "ok_front",
+      "def_front"
+    ]
+  },
+  "selected_model": "resnet18_frozen_logistic",
+  "test_results": {
+    "pixels_logistic": {
+      "threshold": 0.25,
+      "metrics": {
+        "accuracy": 0.8573426573426574,
+        "balanced_accuracy": 0.8262642603171393,
+        "macro_f1": 0.8390577829564112,
+        "defect_precision": 0.8489065606361829,
+        "defect_recall": 0.9426048565121413,
+        "defect_f2": 0.9222462203023758,
+        "roc_auc": 0.9575265827477546,
+        "defect_average_precision": 0.9782174601089236,
+        "brier_score": 0.07677014917135239,
+        "confusion_matrix": [
+          [
+            186,
+            76
+          ],
+          [
+            26,
+            427
+          ]
+        ]
+      },
+      "ci95_stratified_bootstrap": {
+        "accuracy": [
+          0.8321678321678322,
+          0.8797202797202798
+        ],
+        "defect_recall": [
+          0.9205298013245033,
+          0.9624724061810155
+        ],
+        "macro_f1": [
+          0.8088690662479519,
+          0.8651535934837346
+        ]
+      }
+    },
+    "resnet18_frozen_logistic": {
+      "threshold": 0.5,
+      "metrics": {
+        "accuracy": 0.993006993006993,
+        "balanced_accuracy": 0.9920673036415415,
+        "macro_f1": 0.9924635456962103,
+        "defect_precision": 0.9933920704845814,
+        "defect_recall": 0.9955849889624724,
+        "defect_f2": 0.9951456310679612,
+        "roc_auc": 0.9998146369411725,
+        "defect_average_precision": 0.9998930850354272,
+        "brier_score": 0.00487685389816761,
+        "confusion_matrix": [
+          [
+            259,
+            3
+          ],
+          [
+            2,
+            451
+          ]
+        ]
+      },
+      "ci95_stratified_bootstrap": {
+        "accuracy": [
+          0.986013986013986,
+          0.9986013986013986
+        ],
+        "defect_recall": [
+          0.9889624724061811,
+          1.0
+        ],
+        "macro_f1": [
+          0.9849392514702662,
+          0.998492709139242
+        ]
+      }
+    }
+  },
+  "training_seconds": 253.81400510005187,
+  "environment": {
+    "python": "3.12.10",
+    "torch": "2.14.1+cpu",
+    "platform": "Windows-10-10.0.19045-SP0",
+    "cpu_threads": 4,
+    "cuda_used": false
+  },
+  "pretrained_weights": "torchvision ResNet18_Weights.IMAGENET1K_V1",
+  "pretrained_finetuning": false,
+  "augmented_training_images": 5255,
+  "feature_cache_fingerprint": "b8495d39749303d1",
+  "onnx_max_absolute_error": 6.817281246185303e-07,
+  "test_errors": 5
+}

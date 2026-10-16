@@ -1,0 +1,7 @@
+* text=auto eol=lf
+*.pt binary
+*.npz binary
+*.onnx binary
+*.wasm binary
+*.png binary
+docs/vendor/** -whitespace

@@ -1,0 +1,47 @@
+[
+  {
+    "path": "test/def_front/cast_def_0_2154.jpeg",
+    "truth": 1,
+    "prediction": 0,
+    "defect_probability": 0.12043419480323792,
+    "mean_brightness": 142.87284444444444,
+    "contrast_std": 60.60025071747019,
+    "review": "Inspect for subtle rim damage, surface marks, crop/lighting changes, or ambiguous labels; no relabeling inferred."
+  },
+  {
+    "path": "test/def_front/cast_def_0_1607.jpeg",
+    "truth": 1,
+    "prediction": 0,
+    "defect_probability": 0.40910929441452026,
+    "mean_brightness": 144.83553333333333,
+    "contrast_std": 60.43222738134936,
+    "review": "Inspect for subtle rim damage, surface marks, crop/lighting changes, or ambiguous labels; no relabeling inferred."
+  },
+  {
+    "path": "test/ok_front/cast_ok_0_259.jpeg",
+    "truth": 0,
+    "prediction": 1,
+    "defect_probability": 0.8830544948577881,
+    "mean_brightness": 153.18646666666666,
+    "contrast_std": 60.45329976440033,
+    "review": "Inspect for subtle rim damage, surface marks, crop/lighting changes, or ambiguous labels; no relabeling inferred."
+  },
+  {
+    "path": "test/ok_front/cast_ok_0_1137.jpeg",
+    "truth": 0,
+    "prediction": 1,
+    "defect_probability": 0.5718750953674316,
+    "mean_brightness": 141.3245777777778,
+    "contrast_std": 58.27903934558248,
+    "review": "Inspect for subtle rim damage, surface marks, crop/lighting changes, or ambiguous labels; no relabeling inferred."
+  },
+  {
+    "path": "test/ok_front/cast_ok_0_7839.jpeg",
+    "truth": 0,
+    "prediction": 1,
+    "defect_probability": 0.5717569589614868,
+    "mean_brightness": 152.59985555555556,
+    "contrast_std": 60.051142148276156,
+    "review": "Inspect for subtle rim damage, surface marks, crop/lighting changes, or ambiguous labels; no relabeling inferred."
+  }
+]
