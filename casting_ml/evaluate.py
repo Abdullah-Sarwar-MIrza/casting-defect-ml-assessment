@@ -64,7 +64,7 @@ def visual_report(root, rows, probabilities, threshold, output):
         review.append(dict(path=rows[i]["path"], truth=int(y[i]), prediction=int(pred[i]),
                            defect_probability=float(probabilities[i]), mean_brightness=float(im.mean()),
                            contrast_std=float(im.std()),
-                           review="Inspect for subtle rim damage, surface marks, crop/lighting changes, or ambiguous labels; no relabeling inferred."))
+                           review="Folder-level labels do not identify defect locations; visual observations are unverified."))
     (output / "misclassifications.json").write_text(json.dumps(review, indent=2))
     # Include representative correct examples when no mistakes exist.
     chosen = order[:16] if order else list(range(min(8, len(rows))))

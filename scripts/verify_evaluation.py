@@ -29,7 +29,7 @@ def main():
     files = ["artifacts/model.pt", "artifacts/baseline.npz", "docs/model.onnx"]
     hashes = {name: hashlib.sha256(Path(name).read_bytes()).hexdigest() for name in files}
     for name in files:
-        # Check the committed artifacts too: review must never silently change a trained model.
+        # Validate the committed model checksums.
         committed = subprocess.check_output(["git", "show", "HEAD:" + name])
         assert hashlib.sha256(committed).hexdigest() == hashes[name], name
     assert hashes["artifacts/model.pt"] == metadata["torch_sha256"]
@@ -97,7 +97,7 @@ def main():
     for values, name in [(baseline_values,"pixels_logistic"),(torch_values,"resnet18_frozen_logistic"),(onnx_values,"resnet18_frozen_logistic")]:
         original = recorded["test_results"][name]
         assert metrics(y, np.array(values), original["threshold"])["confusion_matrix"] == original["metrics"]["confusion_matrix"]
-    # Original reports remain intact; only write this review's verification evidence.
+    # Write inference replay measurements separately from the original results.
     report = dict(verified_at_utc=datetime.now(timezone.utc).isoformat(),
                   dataset_files_verified=len(manifest), test_images_replayed=len(rows),
                   artifact_sha256=hashes, artifacts_match_git_and_metadata=True,
@@ -105,7 +105,7 @@ def main():
                   replay_score_tolerances=dict(baseline=1e-5,transfer=1e-4),
                   fresh_inference_confusion_matrices_match=True,
                   retraining_performed=False, clean_environment_install_verified=False,
-                  note="Replayed saved artifacts and seeded bootstrap; did not rerun training. Metrics describe the original saved predictions; float rounding can affect score ties.")
+                  note="Saved-artifact inference replay with seeded bootstrap. Metrics reference the original test predictions; floating-point rounding can affect score ties.")
     Path("reports/evaluation_verification.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps(report, indent=2))
 

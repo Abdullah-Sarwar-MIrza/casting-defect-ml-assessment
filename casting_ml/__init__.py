@@ -1,1 +1,1 @@
-"""Casting defect classification, independent of other assessments."""
+"""Casting defect classification and inference."""

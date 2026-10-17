@@ -6,5 +6,8 @@ __pycache__/
 data/
 cache/
 *.log
-!reports/training.log
 .publishing/
+reports/*_browser.png
+reports/local_browser_verification.json
+reports/container_verification.json
+reports/verification.json

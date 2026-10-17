@@ -2,3 +2,4 @@
 pytest>=8,<10
 httpx>=0.28,<1
 playwright==1.64.0
+reportlab==5.0.1

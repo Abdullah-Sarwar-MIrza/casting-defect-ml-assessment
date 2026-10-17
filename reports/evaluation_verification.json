@@ -1,5 +1,5 @@
 {
-  "verified_at_utc": "2026-10-17T08:22:02.546491+00:00",
+  "verified_at_utc": "2026-10-17T08:49:59.327164+00:00",
   "dataset_files_verified": 7348,
   "test_images_replayed": 715,
   "artifact_sha256": {
@@ -99,5 +99,5 @@
   "fresh_inference_confusion_matrices_match": true,
   "retraining_performed": false,
   "clean_environment_install_verified": false,
-  "note": "Replayed saved artifacts and seeded bootstrap; did not rerun training. Metrics describe the original saved predictions; float rounding can affect score ties."
+  "note": "Saved-artifact inference replay with seeded bootstrap. Metrics reference the original test predictions; floating-point rounding can affect score ties."
 }
