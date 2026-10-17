@@ -42,5 +42,89 @@
   "upload_test": "passed",
   "invalid_upload_test": "passed",
   "browser": "Microsoft Edge / Chromium",
-  "verified_at_utc": "2026-10-17T08:53:25Z"
+  "verified_at_utc": "2026-10-17T10:00:09Z",
+  "model_selection": [
+    {
+      "model": "pixels_logistic",
+      "image": "ok",
+      "method": "button",
+      "probability": 0.39615012715685444,
+      "defective": true,
+      "threshold": 0.25,
+      "python_probability": 0.39614994917935026,
+      "absolute_difference": 1.7797750417880565e-07
+    },
+    {
+      "model": "pixels_logistic",
+      "image": "ok",
+      "method": "upload",
+      "probability": 0.39615012715685444,
+      "defective": true,
+      "threshold": 0.25,
+      "python_probability": 0.39614994917935026,
+      "absolute_difference": 1.7797750417880565e-07
+    },
+    {
+      "model": "pixels_logistic",
+      "image": "defective",
+      "method": "button",
+      "probability": 0.9976376792913527,
+      "defective": true,
+      "threshold": 0.25,
+      "python_probability": 0.9976376796990779,
+      "absolute_difference": 4.0772518694609516e-10
+    },
+    {
+      "model": "pixels_logistic",
+      "image": "defective",
+      "method": "upload",
+      "probability": 0.9976376792913527,
+      "defective": true,
+      "threshold": 0.25,
+      "python_probability": 0.9976376796990779,
+      "absolute_difference": 4.0772518694609516e-10
+    },
+    {
+      "model": "resnet18_frozen_logistic",
+      "image": "ok",
+      "method": "button",
+      "probability": 0.03151175379753113,
+      "defective": false,
+      "threshold": 0.5,
+      "python_probability": 0.031528860330581665,
+      "absolute_difference": 1.710653305053711e-05
+    },
+    {
+      "model": "resnet18_frozen_logistic",
+      "image": "ok",
+      "method": "upload",
+      "probability": 0.03151175379753113,
+      "defective": false,
+      "threshold": 0.5,
+      "python_probability": 0.031528860330581665,
+      "absolute_difference": 1.710653305053711e-05
+    },
+    {
+      "model": "resnet18_frozen_logistic",
+      "image": "defective",
+      "method": "button",
+      "probability": 0.9978177547454834,
+      "defective": true,
+      "threshold": 0.5,
+      "python_probability": 0.9978277087211609,
+      "absolute_difference": 9.953975677490234e-06
+    },
+    {
+      "model": "resnet18_frozen_logistic",
+      "image": "defective",
+      "method": "upload",
+      "probability": 0.9978177547454834,
+      "defective": true,
+      "threshold": 0.5,
+      "python_probability": 0.9978277087211609,
+      "absolute_difference": 9.953975677490234e-06
+    }
+  ],
+  "automatic_model_switching": "passed",
+  "baseline_without_resnet_download": "passed"
 }
