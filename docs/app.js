@@ -10,7 +10,7 @@ ort.env.wasm.wasmPaths = new URL("vendor/", window.location.href).href;
 async function getSession() {
   if (!sessionPromise) {
     sessionPromise = (async () => {
-      status.textContent = "Loading the trained model. First use may take a moment?";
+      status.textContent = "Loading the trained model. First use may take a moment...";
       const response = await fetch("metadata.json");
       if (!response.ok) throw new Error("Could not load model metadata");
       metadata = await response.json();
@@ -76,7 +76,7 @@ async function inspect(blob) {
     const canvas = document.createElement("canvas"); canvas.width = bitmap.width; canvas.height = bitmap.height;
     const context = canvas.getContext("2d", {willReadFrequently: true}); context.drawImage(bitmap, 0, 0); bitmap.close();
     const session = await getSession();
-    status.textContent = "Running inference?";
+    status.textContent = "Running inference...";
     const size = metadata.image_size;
     const data = resizeTensor(context.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height, size);
     const started = performance.now();
@@ -87,7 +87,7 @@ async function inspect(blob) {
     title.textContent = defective ? "Defective casting" : "Acceptable casting";
     title.dataset.defective = String(defective);
     document.getElementById("probability").textContent = `Defect score: ${(probability * 100).toFixed(2)}%`;
-    document.getElementById("details").textContent = `Decision threshold: ${metadata.threshold.toFixed(2)} ? Inference: ${(performance.now() - started).toFixed(0)} ms`;
+    document.getElementById("details").textContent = `Decision threshold: ${metadata.threshold.toFixed(2)} | Inference: ${(performance.now() - started).toFixed(0)} ms`;
     window.lastPrediction = {probability, defective, threshold: metadata.threshold};
     status.textContent = "Prediction complete. Your image remained on this device.";
   } finally { controls.forEach(control => control.disabled = false); }

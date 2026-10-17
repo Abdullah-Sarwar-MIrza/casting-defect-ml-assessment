@@ -10,4 +10,6 @@ Container build and API evidence are recorded in `container_verification.json`. 
 
 ## Verified outcome
 
-The public deployment was exercised on 2026-10-16T17:34:38Z. Both example classes were correct, the actual image upload control worked, and an invalid image was rejected. There were zero browser page errors and zero failed asset requests. The largest example score difference from Python was 0.00001711. GitHub Pages deployment and automated tests completed successfully. The Docker build, health route, both class predictions, and non-root UID were independently verified.
+Last live browser check: 2026-10-17T07:53:53Z. Both normal and defective examples were correct through the example buttons and actual file uploads. Invalid image data were rejected. There were zero browser page errors, failed requests, or HTTP error responses. The largest example score difference from Python was 0.00001711. The public ONNX file (44,700,088 bytes) has the same SHA-256 as the repository model: `5de664c751ab50eed0fdc1e829f983eaa2a871483daae4c2abf4ea1448daf9d4`.
+
+See `verification.json` for the current review and `evaluation_verification.json` for the unchanged artifacts and full test-set replay. The Docker evidence was recorded on 16 October 2026; its build, health route, both class predictions, and non-root UID were verified then, not rerun in this review. The current public path is browser inference, not the optional REST container.

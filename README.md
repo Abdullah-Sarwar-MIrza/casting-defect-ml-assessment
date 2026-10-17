@@ -9,11 +9,35 @@ A CPU-trained computer vision prototype for identifying defective front-view cas
 
 The live interface runs the exported trained model with ONNX Runtime Web in the browser. Select an image or try either held-out example. Image pixels stay on the device. The initial model download is approximately 43 MiB plus 11 MiB of runtime assets, then the browser can cache them. This is a public image-upload inference interface, as permitted by the assessment. The REST API below is supplied for local/container deployment; GitHub Pages hosts the browser interface.
 
+## System architecture
+
+```mermaid
+flowchart TD
+    dataset["External casting images and folder labels"] --> audit["Decode, hash, and remove train copies overlapping test"]
+    audit --> splits["Seeded train and validation split; original test held out"]
+    splits --> baseline["Pixel features and class-weighted logistic regression"]
+    splits --> transfer["Frozen ResNet-18 features and augmented training images"]
+    transfer --> head["Class-weighted logistic head"]
+    baseline --> selection["Validation-only regularization and threshold selection"]
+    head --> selection
+    selection --> evaluation["Locked models: held-out metrics and error analysis"]
+    selection --> export["Selected ResNet: fuse scaler and head; export ONNX"]
+    export --> artifacts["Torch checkpoint, ONNX model, and metadata"]
+    artifacts --> pages["GitHub Pages serves model and inference assets"]
+    pages --> browser["Browser upload: RGB resize and ONNX Runtime Web"]
+    browser --> result["Defect score and thresholded class"]
+    artifacts --> api["Optional Docker and FastAPI: health and predict routes"]
+    api --> result
+    evaluation --> reports["Saved predictions, confusion matrix, and error gallery"]
+```
+
+The public inference path runs in the visitor's browser. The Docker REST API is a separate deployment option. Test data are used for final evaluation, never for selecting parameters; the baseline remains a separate saved artifact.
+
 ## Problem and dataset
 
 Binary classification fits this dataset because labels are attached to complete images, with no bounding boxes or masks. A missed defect is the primary risk; false alarms increase manual review. The objective is a defensible prototype, rather than autonomous acceptance of manufactured parts.
 
-Source: Ravirajsinh Dabhi, [casting product image data for quality inspection](https://www.kaggle.com/datasets/ravirajsinh45/real-life-industrial-dataset-of-casting-product). The images are 300?300 front views of cast parts. This is a practical industrial texture and shape problem, rather than a toy digit dataset. Images live in class folders: `ok_front` ? 0 (acceptable), `def_front` ? 1 (defective). The full dataset is excluded from Git. The two demo images and error-gallery derivatives are attributed to the same upstream dataset; upstream licensing and terms apply to those images.
+Source: Ravirajsinh Dabhi, [casting product image data for quality inspection](https://www.kaggle.com/datasets/ravirajsinh45/real-life-industrial-dataset-of-casting-product). The images are 300 x 300 front views of cast parts. This is a practical industrial texture and shape problem, rather than a toy digit dataset. Images live in class folders: `ok_front` -> 0 (acceptable), `def_front` -> 1 (defective). The full dataset is excluded from Git. The two demo images and error-gallery derivatives are attributed to the same upstream dataset; upstream licensing and terms apply to those images.
 
 | Supplied partition | Acceptable | Defective | Total |
 |---|---:|---:|---:|
@@ -21,7 +45,7 @@ Source: Ravirajsinh Dabhi, [casting product image data for quality inspection](h
 | Test | 262 | 453 | 715 |
 | Total | 3,137 | 4,211 | 7,348 |
 
-The audit checks decoding, image dimensions, byte hashes, decoded-pixel hashes, conflicting duplicate labels, and cross-split exact overlap. It found **64 training images that were exact decoded-pixel copies of test images**, zero corrupt images, zero conflicting exact-duplicate labels, and no duplicates within the supplied test set. All 64 overlapping training copies are removed, preserving the complete test partition, before creating a seeded, stratified validation split. The alternate 512?512 dataset is deliberately excluded because it may contain related images.
+The audit checks decoding, image dimensions, byte hashes, decoded-pixel hashes, conflicting duplicate labels, and cross-split exact overlap. It found **64 training images that were exact decoded-pixel copies of test images**, zero corrupt images, zero conflicting exact-duplicate labels, and no duplicates within the supplied test set. All 64 overlapping training copies are removed, preserving the complete test partition, before creating a seeded, stratified validation split. The alternate 512 x 512 dataset is deliberately excluded because it may contain related images.
 
 | Final split | Acceptable | Defective | Total |
 |---|---:|---:|---:|
@@ -33,8 +57,8 @@ See [audit](reports/data_audit.json) and [complete split manifest](reports/manif
 
 ## Models, preprocessing, and tuning
 
-1. **Baseline:** grayscale 32?32 pixel features, standard scaling, and class-weighted logistic regression. This is inexpensive and establishes how much can be learned from coarse appearance without a pretrained CNN.
-2. **Stronger model:** ImageNet-pretrained ResNet-18, frozen as a 512-dimensional feature extractor, followed by standard scaling and a newly trained class-weighted logistic head. RGB inputs are resized to 128?128 with antialiased bilinear interpolation and ImageNet normalization. Normalization is embedded in the exported model. A fixed, frozen encoder reduces CPU training cost and overfitting risk on a small dataset; no full-network fine-tuning is claimed.
+1. **Baseline:** grayscale 32 x 32 pixel features, standard scaling, and class-weighted logistic regression. This is inexpensive and establishes how much can be learned from coarse appearance without a pretrained CNN.
+2. **Stronger model:** ImageNet-pretrained ResNet-18, frozen as a 512-dimensional feature extractor, followed by standard scaling and a newly trained class-weighted logistic head. RGB inputs are resized to 128 x 128 with antialiased bilinear interpolation and ImageNet normalization. Normalization is embedded in the exported model. A fixed, frozen encoder reduces CPU training cost and overfitting risk on a small dataset; no full-network fine-tuning is claimed.
 
 Training uses original images plus one seeded augmented image per training image: a horizontal or vertical flip and brightness factor in [0.9, 1.1]. The front-view parts have no known orientation-dependent class meaning. Validation and test images receive no random augmentation. Both classifiers use inverse-frequency class weights for moderate imbalance.
 
@@ -51,7 +75,7 @@ See [all eight tuning trials](reports/tuning_trials.json) and [locked validation
 
 Selected-model confusion matrix (rows=true, columns=predicted; acceptable first): `[[259, 3], [2, 451]]`. This means **2 missed defects and 3 false alarms** out of 715 images. Defect average precision is 0.9999; Brier score is 0.00488. Scores have not been calibrated for deployment or distribution shift.
 
-Stratified bootstrap, 1,000 resamples: 95% accuracy interval **98.60?99.86%**; defect recall **98.90?100%**; macro F1 **0.9849?0.9985**. These intervals assume independent examples within class; related acquisitions could make them too narrow.
+Stratified bootstrap, 1,000 resamples: 95% accuracy interval **98.60-99.86%**; defect recall **98.90-100%**; macro F1 **0.9849-0.9985**. These intervals assume independent examples within class; related acquisitions could make them too narrow.
 
 ![Confusion matrix](reports/confusion_matrix.png)
 
@@ -140,3 +164,30 @@ This project has its own Git repository and history. It uses the external datase
 The public dataset covers one part/view and restricted acquisition conditions, with no defect-subtype annotations. High benchmark accuracy does not demonstrate robustness to new factories, cameras, materials, or unseen defects. Two-dimensional class labels cannot locate a defect. Scores are not a rejection guarantee.
 
 With additional compute and data: collect part/session IDs and a new source-held-out evaluation set; review the five errors with an expert; add hard-negative and subtle-defect annotations; compare higher-resolution (224/300) inputs and fine-tuning the final ResNet block; test augmentations by validation ablation; calibrate probabilities on independent validation data; evaluate illumination/camera shifts; and optimize defect recall subject to an operational false-alarm budget. Detection or segmentation would require newly annotated defect locations. None of these test-derived hypotheses has been used to alter the reported model.
+
+## Final verification
+
+Reviewed on **17 October 2026** using the existing trained artifacts. No model weights, thresholds, configuration, original test predictions, or original evaluation results were changed.
+
+| Check | Verified result | Evidence |
+|---|---|---|
+| Automated tests | **16 passed, 0 failed, 0 skipped** locally, including API validation, split integrity, metrics for both models, and baseline replay on all test images. | [Verification summary](reports/verification.json), `python -m pytest -q` |
+| Public deployment | The [live inference interface](https://abdullah-sarwar-mirza.github.io/casting-defect-ml-assessment/) loaded and ran the actual model. Its hosted ONNX SHA-256 matches the local model. | [Live browser record](reports/live_browser_verification.json), [deployment details](reports/deployment.md) |
+| Image uploads | Normal and defective images passed both example buttons and the actual file-upload control. Defect scores were **0.031512** and **0.997818**, respectively, at threshold **0.50**. Invalid image data were rejected; there were no page errors, failed requests, or HTTP error responses. | [Browser evidence and upload scores](reports/live_browser_verification.json), [screenshot](reports/live_browser.png) |
+| Model artifacts | Torch checkpoint, baseline NumPy parameters, and ONNX model match their committed SHA-256 hashes. Torch/ONNX metadata checksums and both metadata copies agree. All three artifacts were replayed over **715 test images** and reproduce the original confusion matrices. | [Artifact hashes and replay](reports/evaluation_verification.json) |
+| Reported metrics | Recomputed both models' metrics from the saved predictions, matching the original results within absolute tolerance **1e-8**. Reproduced both seeded 1,000-resample bootstrap intervals. Selected-model accuracy remains **99.30%**, with **2 missed defects and 3 false alarms**; baseline accuracy remains **85.73%**. | [Replay evidence](reports/evaluation_verification.json), [original results](reports/results.json), [original predictions](reports/test_predictions.csv) |
+| Reproducibility | All **7,348** input byte and decoded-pixel hashes match the split manifest. Read-only replay uses the existing artifacts and fixed config; `pip check` found no broken requirements. Training and a fresh-environment installation were **not rerun** in this review. | [Replay script](scripts/verify_evaluation.py), [config](config.json), [manifest](reports/manifest.csv) |
+
+Score replay is numerical rather than bit-identical: the largest baseline difference from saved probabilities was **1.61e-6** (tolerance 1e-5); ONNX versus saved probabilities was **7.57e-6**, and Torch versus ONNX was **7.99e-6** (tolerance 1e-4). Classification counts remain unchanged. These measured rounding differences do not replace the original evaluation results. Browser versus Python differences on the two examples were at most **1.72e-5**.
+
+To repeat the checks, run these commands from the root of a **Git clone** after installing `requirements-dev.txt` and making the external dataset available:
+
+```bash
+python -m pip check
+python -m pytest -q
+python -m scripts.verify_evaluation --dataset-root /path/to/casting_data/casting_data
+python -m scripts.browser_smoke
+python -m scripts.browser_smoke --url https://abdullah-sarwar-mirza.github.io/casting-defect-ml-assessment/ --live
+```
+
+The Git clone is required for the artifact comparison against committed files. Without the external dataset, the saved-baseline replay test skips; the full evaluation replay requires it. The remaining tests use repository artifacts. The test run emitted one upstream Starlette TestClient deprecation warning. The Docker evidence is from **16 October 2026** and was not rerun in this review; see [container verification](reports/container_verification.json). The public deployment should be rechecked at submission time.

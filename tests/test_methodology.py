@@ -21,18 +21,19 @@ def test_split_integrity():
     assert len(rows)==audit["total_images"]
 
 
-def test_metrics_recomputed_from_saved_predictions():
+@pytest.mark.parametrize("model,column", [("pixels_logistic","baseline_probability"),("resnet18_frozen_logistic","transfer_probability")])
+def test_metrics_recomputed_from_saved_predictions(model,column):
     with Path("reports/test_predictions.csv").open() as stream:
         rows=list(csv.DictReader(stream))
-    y=np.array([int(r["target"]) for r in rows]); p=np.array([float(r["transfer_probability"]) for r in rows])
-    result=json.loads(Path("reports/results.json").read_text())["test_results"]["resnet18_frozen_logistic"]
+    y=np.array([int(r["target"]) for r in rows]); p=np.array([float(r[column]) for r in rows])
+    result=json.loads(Path("reports/results.json").read_text())["test_results"][model]
     actual=metrics(y,p,result["threshold"])
     for key, value in actual.items():
         if key == "confusion_matrix":
             assert value == result["metrics"][key]
         else:
-            assert value == pytest.approx(result["metrics"][key], abs=1e-8)
-    assert sum(int(a!=b) for a,b in zip(y,p>=result["threshold"]))==5
+            assert value == pytest.approx(result["metrics"][key], abs=1e-8, rel=0)
+    assert sum(int(a!=b) for a,b in zip(y,p>=result["threshold"])) == sum(result["metrics"]["confusion_matrix"][i][1-i] for i in (0,1))
 
 
 def test_validation_selection_matches_trials():
@@ -60,8 +61,15 @@ def test_saved_baseline_reproduces_predictions():
     if not dataset.exists():
         pytest.skip("Full dataset is external and is not distributed in the repository")
     with Path("reports/test_predictions.csv").open() as stream:
-        rows=list(csv.DictReader(stream))[:20]
+        rows=list(csv.DictReader(stream))
     x=np.stack([np.asarray(read_rgb(dataset/r["path"]).convert("L").resize((32,32),Image.Resampling.BILINEAR),dtype=np.float32).ravel()/255.0 for r in rows])
-    logits=((x-parameters["mean"])/parameters["scale"])@parameters["coef"].T+parameters["intercept"]
+    # StandardScaler preserves float32, rounding after each in-place operation.
+    scaled=x.copy()
+    scaled-=parameters["mean"]
+    scaled/=parameters["scale"]
+    logits=scaled@parameters["coef"].T+parameters["intercept"]
     probability=1/(1+np.exp(-logits.ravel()))
-    assert np.max(np.abs(probability-np.array([float(r["baseline_probability"]) for r in rows])))<1e-6
+    saved=np.array([float(r["baseline_probability"]) for r in rows])
+    # CPU float32 reductions are not bit-identical; require tight score and exact class parity.
+    np.testing.assert_allclose(probability,saved,atol=1e-5,rtol=0)
+    np.testing.assert_array_equal(probability>=parameters["threshold"],saved>=parameters["threshold"])
