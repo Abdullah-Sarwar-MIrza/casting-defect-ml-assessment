@@ -1,5 +1,5 @@
 "use strict";
-// All model assets are same-origin. The uploaded image is never sent to a server.
+// Images are processed locally; model assets are served from this site.
 let sessionPromise;
 let metadata;
 let baselinePromise;
@@ -34,7 +34,7 @@ async function getBaseline() {
 }
 
 function baselineProbability(pixels, width, height, model) {
-  // Pillow-compatible 8-bit RGB to grayscale before antialiased resizing.
+  // Use Pillow's integer RGB-to-grayscale coefficients before resizing.
   const gray = new Uint8ClampedArray(pixels.length);
   for (let i = 0; i < pixels.length; i += 4) {
     const value = (19595 * pixels[i] + 38470 * pixels[i+1] + 7471 * pixels[i+2] + 32768) >> 16;
@@ -51,8 +51,8 @@ function baselineProbability(pixels, width, height, model) {
   return logit >= 0 ? 1 / (1 + Math.exp(-logit)) : Math.exp(logit) / (1 + Math.exp(logit));
 }
 
-// Separable, antialiased bilinear resize following Pillow's pixel-center convention.
-// Rounding the intermediate horizontal pass mirrors the 8-bit Python pipeline.
+// Use antialiased bilinear weights aligned to pixel centers.
+// Round the horizontal pass to match Pillow's 8-bit intermediate.
 function filterWeights(inputSize, outputSize) {
   const scale = inputSize / outputSize, support = Math.max(1, scale);
   return Array.from({length: outputSize}, (_, out) => {

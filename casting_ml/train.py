@@ -1,4 +1,4 @@
-"""Run the complete CPU-friendly experiment: python -m casting_ml.train."""
+"""Train, validate, evaluate, and export the casting classifiers."""
 import argparse
 import csv
 import hashlib
@@ -89,7 +89,7 @@ def main():
     records, audit = prepare(root, output, seed, config["validation_fraction"])
     partitions = {s: [r for r in records if r["split"] == s] for s in ("train", "validation", "test")}
     labels = {s: np.array([r["target"] for r in rows]) for s, rows in partitions.items()}
-    # Hyperparameters are selected before any test features or test predictions are made.
+    # Tune hyperparameters using training and validation data only.
     baseline_x = {s: baseline_features(root, partitions[s]) for s in ("train", "validation")}
     baseline, baseline_choice, baseline_trials = tune("pixels_logistic", baseline_x["train"], labels["train"], baseline_x["validation"], labels["validation"], config["baseline_C"], config["threshold_grid"])
     np.savez(artifacts / "baseline.npz", mean=baseline[0].mean_, scale=baseline[0].scale_,
@@ -121,14 +121,14 @@ def main():
     transfer, transfer_choice, transfer_trials = tune("resnet18_frozen_logistic", np.concatenate([deep_x["train"], augmented]),
                                                     np.tile(labels["train"], 2), deep_x["validation"], labels["validation"],
                                                     config["transfer_C"], config["threshold_grid"])
-    # Lock choices to disk before the first held-out test inference.
+    # Record validation selections before evaluating the test set.
     choices = dict(baseline=baseline_choice, transfer=transfer_choice,
                    selection_rule="maximize validation macro F1; threshold tuned for validation defect F2")
     selected = max([baseline_choice, transfer_choice], key=lambda c: (c["validation"]["macro_f1"], c["validation"]["defect_f2"]))
     choices["selected_model"] = selected["model"]
     (output / "validation_selection.json").write_text(json.dumps(choices, indent=2))
     (output / "tuning_trials.json").write_text(json.dumps(baseline_trials + transfer_trials, indent=2))
-    # Fuse StandardScaler and sklearn head into Torch, so deployment has one model.
+    # Fold feature scaling and the logistic head into the ResNet export.
     scaler, head = transfer.steps[0][1], transfer.steps[1][1]
     weight = head.coef_[0] / scaler.scale_
     bias = head.intercept_[0] - np.dot(weight, scaler.mean_)
@@ -164,7 +164,7 @@ def main():
     parity_error = float(np.max(np.abs(reference-exported)))
     assert parity_error < 1e-4
     review = visual_report(root, partitions["test"], p_transfer, transfer_choice["threshold"], output)
-    # Save non-error examples for public smoke tests and interactive demo.
+    # Save held-out examples correctly classified by ResNet for the demo.
     examples = []
     for target, label in [(0, "ok"), (1, "defective")]:
         index = next(i for i, row in enumerate(partitions["test"]) if row["target"] == target and (p_transfer[i] >= transfer_choice["threshold"]) == target)

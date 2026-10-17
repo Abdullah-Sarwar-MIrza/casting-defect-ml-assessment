@@ -1,4 +1,4 @@
-"""REST service: uvicorn casting_ml.api:app --host 0.0.0.0 --port 8000."""
+"""REST endpoints for model discovery and image classification."""
 import asyncio
 import logging
 import os

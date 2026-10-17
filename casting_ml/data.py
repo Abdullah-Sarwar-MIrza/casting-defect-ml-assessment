@@ -1,4 +1,4 @@
-"""Content audit and reproducible split. The supplied test partition is held out."""
+"""Audit image content and create reproducible training and validation splits."""
 import csv
 import hashlib
 import json
@@ -100,6 +100,6 @@ def prepare(dataset_root, output, seed=42, validation_fraction=0.2):
 
 
 def image_tensor(path, size=128):
-    """Canonical RGB, EXIF-aware, bilinear resize, float CHW in [0,1]."""
+    """Return EXIF-corrected, bilinearly resized RGB data as float32 CHW in [0,1]."""
     image = read_rgb(path).resize((size, size), Image.Resampling.BILINEAR)
     return np.asarray(image, dtype=np.float32).transpose(2, 0, 1).copy() / 255.0

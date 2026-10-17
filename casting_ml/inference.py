@@ -1,4 +1,4 @@
-"""Inference for the saved pixel baseline and ONNX ResNet model."""
+"""Image validation and prediction with saved NumPy and ONNX classifiers."""
 import hashlib
 import io
 import json

@@ -63,13 +63,13 @@ def test_saved_baseline_reproduces_predictions():
     with Path("reports/test_predictions.csv").open() as stream:
         rows=list(csv.DictReader(stream))
     x=np.stack([np.asarray(read_rgb(dataset/r["path"]).convert("L").resize((32,32),Image.Resampling.BILINEAR),dtype=np.float32).ravel()/255.0 for r in rows])
-    # StandardScaler preserves float32, rounding after each in-place operation.
+    # Match StandardScaler's float32 rounding after each operation.
     scaled=x.copy()
     scaled-=parameters["mean"]
     scaled/=parameters["scale"]
     logits=scaled@parameters["coef"].T+parameters["intercept"]
     probability=1/(1+np.exp(-logits.ravel()))
     saved=np.array([float(r["baseline_probability"]) for r in rows])
-    # CPU float32 reductions are not bit-identical; require tight score and exact class parity.
+    # Allow floating-point score drift while requiring identical labels.
     np.testing.assert_allclose(probability,saved,atol=1e-5,rtol=0)
     np.testing.assert_array_equal(probability>=parameters["threshold"],saved>=parameters["threshold"])

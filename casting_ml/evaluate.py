@@ -1,4 +1,4 @@
-"""Held-out metrics, uncertainty, and visual error review."""
+"""Classification metrics, bootstrap intervals, and error analysis."""
 import json
 from pathlib import Path
 import numpy as np
@@ -23,7 +23,7 @@ def metrics(y, probability, threshold):
 
 
 def choose_threshold(y, probability, grid):
-    # Validation only: F2 values missing defects four times more heavily than false alarms.
+    # F2 weights missed defects four times as heavily as false positives.
     ranked = [(fbeta_score(y, probability >= t, beta=2, zero_division=0),
                f1_score(y, probability >= t, average="macro", zero_division=0),
                -abs(t - 0.5), t) for t in grid]
@@ -35,7 +35,7 @@ def bootstrap_intervals(y, probability, threshold, seed=42, repeats=1000):
     y, probability = np.asarray(y), np.asarray(probability)
     values = []
     for _ in range(repeats):
-        # Stratified resampling preserves class balance in each draw.
+        # Resample within each class to preserve its sample count.
         ids = np.concatenate([rng.choice(np.flatnonzero(y == c), size=sum(y == c), replace=True)
                               for c in (0, 1)])
         prediction = probability[ids] >= threshold
@@ -56,7 +56,7 @@ def visual_report(root, rows, probabilities, threshold, output):
     y = np.array([r["target"] for r in rows])
     pred = probabilities >= threshold
     wrong = np.flatnonzero(pred != y)
-    # Prioritize false negatives, then strongest mistakes.
+    # List missed defects first, followed by the most confident errors.
     order = sorted(wrong, key=lambda i: (y[i] != 1, -abs(probabilities[i] - threshold)))
     review = []
     for i in order:
@@ -66,7 +66,7 @@ def visual_report(root, rows, probabilities, threshold, output):
                            contrast_std=float(im.std()),
                            review="Folder-level labels do not identify defect locations; visual observations are unverified."))
     (output / "misclassifications.json").write_text(json.dumps(review, indent=2))
-    # Include representative correct examples when no mistakes exist.
+    # Show correct examples if the error gallery would otherwise be empty.
     chosen = order[:16] if order else list(range(min(8, len(rows))))
     fig, axes = plt.subplots(max(1, (len(chosen) + 3) // 4), 4, figsize=(12, max(3, ((len(chosen)+3)//4)*3)), squeeze=False)
     for ax in axes.flat:
@@ -89,7 +89,7 @@ def visual_report(root, rows, probabilities, threshold, output):
     fig.tight_layout()
     fig.savefig(output / "confusion_matrix.png", dpi=140)
     plt.close(fig)
-    # Brightness and contrast strata expose aggregate failure concentrations.
+    # Summarize errors by brightness and contrast thirds.
     all_stats = []
     for row in rows:
         im = np.asarray(read_rgb(Path(root) / row["path"]).convert("L"), dtype=float)

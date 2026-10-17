@@ -1,4 +1,4 @@
-"""A frozen ImageNet ResNet-18 with a fitted binary logistic regression head."""
+"""ResNet-18 feature extractor with a binary logistic classification head."""
 import torch
 from torch import nn
 from torchvision.models import resnet18, ResNet18_Weights
