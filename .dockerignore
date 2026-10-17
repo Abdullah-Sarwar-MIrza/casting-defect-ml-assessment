@@ -6,3 +6,4 @@
 !docs/model.onnx
 !artifacts/
 !artifacts/metadata.json
+!artifacts/baseline.npz

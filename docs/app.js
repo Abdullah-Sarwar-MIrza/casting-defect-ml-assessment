@@ -2,8 +2,11 @@
 // All model assets are same-origin. The uploaded image is never sent to a server.
 let sessionPromise;
 let metadata;
+let baselinePromise;
+let lastBlob;
+const modelSelect = document.getElementById("model");
 const status = document.getElementById("status");
-const controls = [...document.querySelectorAll("button,input")];
+const controls = [...document.querySelectorAll("button,input,select")];
 ort.env.wasm.numThreads = 1;
 ort.env.wasm.wasmPaths = new URL("vendor/", window.location.href).href;
 
@@ -18,6 +21,34 @@ async function getSession() {
     })().catch(error => { sessionPromise = undefined; throw error; });
   }
   return sessionPromise;
+}
+
+async function getBaseline() {
+  if (!baselinePromise) {
+    baselinePromise = fetch("baseline.json").then(response => {
+      if (!response.ok) throw new Error("Could not load baseline parameters");
+      return response.json();
+    }).catch(error => { baselinePromise = undefined; throw error; });
+  }
+  return baselinePromise;
+}
+
+function baselineProbability(pixels, width, height, model) {
+  // Pillow-compatible 8-bit RGB to grayscale before antialiased resizing.
+  const gray = new Uint8ClampedArray(pixels.length);
+  for (let i = 0; i < pixels.length; i += 4) {
+    const value = (19595 * pixels[i] + 38470 * pixels[i+1] + 7471 * pixels[i+2] + 32768) >> 16;
+    gray[i] = gray[i+1] = gray[i+2] = value;
+    gray[i+3] = 255;
+  }
+  const values = resizeTensor(gray, width, height, model.image_size);
+  let logit = model.intercept;
+  for (let i = 0; i < model.coef.length; ++i) {
+    const centered = Math.fround(values[i] - model.mean[i]);
+    const scaled = Math.fround(centered / model.scale[i]);
+    logit += scaled * model.coef[i];
+  }
+  return logit >= 0 ? 1 / (1 + Math.exp(-logit)) : Math.exp(logit) / (1 + Math.exp(logit));
 }
 
 // Separable, antialiased bilinear resize following Pillow's pixel-center convention.
@@ -66,7 +97,12 @@ function resizeTensor(pixels, width, height, size) {
 async function inspect(blob) {
   if (!blob || !["image/jpeg", "image/png"].includes(blob.type)) throw new Error("Choose a JPEG or PNG image.");
   if (blob.size > 10 * 1024 * 1024) throw new Error("Image exceeds the 10 MiB limit.");
+  const modelId = modelSelect.value;
   controls.forEach(control => control.disabled = true);
+  window.lastPrediction = null;
+  document.getElementById("prediction").textContent = "Inspecting image...";
+  document.getElementById("probability").textContent = "";
+  document.getElementById("details").textContent = "";
   try {
     const bitmap = await createImageBitmap(blob, {imageOrientation: "from-image", premultiplyAlpha: "none", colorSpaceConversion: "none"});
     if (bitmap.width * bitmap.height > 20000000) { bitmap.close(); throw new Error("Image exceeds the 20 megapixel limit."); }
@@ -75,20 +111,32 @@ async function inspect(blob) {
     preview.dataset.objectUrl = URL.createObjectURL(blob); preview.src = preview.dataset.objectUrl; preview.hidden = false;
     const canvas = document.createElement("canvas"); canvas.width = bitmap.width; canvas.height = bitmap.height;
     const context = canvas.getContext("2d", {willReadFrequently: true}); context.drawImage(bitmap, 0, 0); bitmap.close();
-    const session = await getSession();
-    status.textContent = "Running inference...";
-    const size = metadata.image_size;
-    const data = resizeTensor(context.getImageData(0, 0, canvas.width, canvas.height).data, canvas.width, canvas.height, size);
-    const started = performance.now();
-    const output = await session.run({image: new ort.Tensor("float32", data, [1, 3, size, size])});
-    const probability = output.defect_probability.data[0];
-    const defective = probability >= metadata.threshold;
+    lastBlob = blob;
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let probability, threshold, started;
+    if (modelId === "pixels_logistic") {
+      const model = await getBaseline();
+      status.textContent = "Running baseline inference...";
+      started = performance.now();
+      probability = baselineProbability(pixels, canvas.width, canvas.height, model);
+      threshold = model.threshold;
+    } else {
+      const session = await getSession();
+      status.textContent = "Running ResNet inference...";
+      const size = metadata.image_size;
+      const data = resizeTensor(pixels, canvas.width, canvas.height, size);
+      started = performance.now();
+      const output = await session.run({image: new ort.Tensor("float32", data, [1, 3, size, size])});
+      probability = output.defect_probability.data[0];
+      threshold = metadata.threshold;
+    }
+    const defective = probability >= threshold;
     const title = document.getElementById("prediction");
     title.textContent = defective ? "Defective casting" : "Acceptable casting";
     title.dataset.defective = String(defective);
     document.getElementById("probability").textContent = `Defect score: ${(probability * 100).toFixed(2)}%`;
-    document.getElementById("details").textContent = `Decision threshold: ${metadata.threshold.toFixed(2)} | Inference: ${(performance.now() - started).toFixed(0)} ms`;
-    window.lastPrediction = {probability, defective, threshold: metadata.threshold};
+    document.getElementById("details").textContent = `${modelSelect.options[modelSelect.selectedIndex].text} | Decision threshold: ${threshold.toFixed(2)} | Inference: ${(performance.now() - started).toFixed(0)} ms`;
+    window.lastPrediction = {probability, defective, threshold, model: modelId};
     status.textContent = "Prediction complete. Your image remained on this device.";
   } finally { controls.forEach(control => control.disabled = false); }
 }
@@ -100,7 +148,15 @@ function showError(error) {
   document.getElementById("details").textContent = "";
   status.textContent = `Unable to inspect image: ${error.message}`;
 }
-document.getElementById("image").addEventListener("change", event => inspect(event.target.files[0]).catch(showError));
+document.getElementById("image").addEventListener("change", event => {
+  if (event.target.files[0]) inspect(event.target.files[0]).catch(showError);
+});
+modelSelect.addEventListener("change", () => {
+  document.getElementById("model-info").textContent = modelSelect.value === "pixels_logistic"
+    ? "Pixel baseline: 85.73% held-out accuracy; decision threshold 25%. More false alarms are expected."
+    : "ResNet-18: 99.30% held-out accuracy; decision threshold 50%.";
+  if (lastBlob) inspect(lastBlob).catch(showError);
+});
 for (const label of ["ok", "defective"]) {
   document.getElementById(`example-${label}`).addEventListener("click", async () => {
     try {

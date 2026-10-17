@@ -35,5 +35,6 @@
       "expected_probability": 0.9978277087211609
     }
   ],
-  "onnx_max_absolute_error": 6.817281246185303e-07
+  "onnx_max_absolute_error": 6.817281246185303e-07,
+  "baseline_sha256": "8129eca4ba9bb73e9538d70a9223ce7c09ec7ba97e588ac8c94610d62be737bc"
 }

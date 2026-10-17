@@ -94,6 +94,12 @@ def main():
     baseline, baseline_choice, baseline_trials = tune("pixels_logistic", baseline_x["train"], labels["train"], baseline_x["validation"], labels["validation"], config["baseline_C"], config["threshold_grid"])
     np.savez(artifacts / "baseline.npz", mean=baseline[0].mean_, scale=baseline[0].scale_,
              coef=baseline[-1].coef_, intercept=baseline[-1].intercept_, threshold=baseline_choice["threshold"])
+    baseline_sha256 = hashlib.sha256((artifacts / "baseline.npz").read_bytes()).hexdigest()
+    baseline_export = dict(model="pixels_logistic", image_size=32, threshold=baseline_choice["threshold"],
+                           mean=baseline[0].mean_.tolist(), scale=baseline[0].scale_.tolist(),
+                           coef=baseline[-1].coef_.ravel().tolist(), intercept=float(baseline[-1].intercept_[0]),
+                           source_sha256=baseline_sha256)
+    Path("docs/baseline.json").write_text(json.dumps(baseline_export, separators=(",", ":")))
     model = DefectNetwork(pretrained=True).eval()
     for param in model.encoder.parameters():
         param.requires_grad_(False)
@@ -171,6 +177,7 @@ def main():
                     normalization=dict(mean=[0.485,0.456,0.406],std=[0.229,0.224,0.225],location="inside exported graph"),
                     model_sha256=hashlib.sha256(Path("docs/model.onnx").read_bytes()).hexdigest(),
                     torch_sha256=hashlib.sha256((artifacts/"model.pt").read_bytes()).hexdigest(),
+                    baseline_sha256=baseline_sha256,
                     examples=examples, onnx_max_absolute_error=parity_error)
     (artifacts / "metadata.json").write_text(json.dumps(metadata, indent=2))
     Path("docs/metadata.json").write_text(json.dumps(metadata, indent=2))

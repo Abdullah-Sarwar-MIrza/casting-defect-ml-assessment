@@ -56,7 +56,9 @@ flowchart TD
     head --> selection
     selection --> evaluation["Locked models: held-out metrics and error analysis"]
     selection --> export["Selected ResNet: fuse scaler and head; export ONNX"]
-    export --> artifacts["Torch checkpoint, ONNX model, and metadata"]
+    export --> artifacts["Saved model artifacts and metadata"]
+    selection --> baselineExport["Pixel baseline parameters as JSON"]
+    baselineExport --> pages
     artifacts --> pages["GitHub Pages serves model and inference assets"]
     pages --> browser["Browser upload: RGB resize and ONNX Runtime Web"]
     browser --> result["Defect score and thresholded class"]
@@ -65,7 +67,7 @@ flowchart TD
     evaluation --> reports["Saved predictions, confusion matrix, and error gallery"]
 ```
 
-The public interface uses ONNX Runtime Web on GitHub Pages. Model and runtime assets are served from the repository; image pixels remain in the browser. The initial download is approximately 43 MiB for the model and 11 MiB for the runtime. The REST API is a separate Docker deployment option.
+The public interface has a model selector for **ResNet-18 + logistic head** and the **Pixel logistic baseline**. Switching models automatically reruns the current image. Both use their saved preprocessing and thresholds: 0.50 for ResNet and 0.25 for the baseline. Image pixels remain in the browser. ResNet uses ONNX Runtime Web (approximately 43 MiB model plus 11 MiB runtime); the baseline loads a small parameter JSON and does not download the ResNet model. The REST API supports the same choices. The baseline produces more false alarms; the acceptable demo example is one of its recorded errors.
 
 ## Reproducibility
 
@@ -91,7 +93,7 @@ casting_data/casting_data/
 
 The full dataset is external and excluded from Git. The default path is `../casting_data/casting_data`; `--dataset-root` overrides it. Training uses fixed seeds and deterministic Torch algorithms. Floating-point results can differ slightly across builds. Pretrained weights download if absent; feature caches are keyed by the split manifest and configuration.
 
-Saved artifacts are `artifacts/model.pt`, `artifacts/baseline.npz`, `artifacts/metadata.json`, and `docs/model.onnx`. The exported model includes normalization and the fused feature scaler and classifier. Metadata records model SHA-256 hashes.
+Saved artifacts are `artifacts/model.pt`, `artifacts/baseline.npz`, `artifacts/metadata.json`, and `docs/model.onnx`. `docs/baseline.json` contains a browser-readable copy of the baseline parameters and source checksum. Training exports both deployment formats. The exported ResNet model includes normalization and the fused feature scaler and classifier. Metadata records model SHA-256 hashes.
 
 ```bash
 python -m pip install -r requirements-dev.txt
@@ -105,10 +107,11 @@ The tests use the saved artifacts. The baseline replay test also requires the ex
 ```bash
 python -m pip install -r requirements.txt
 python -m uvicorn casting_ml.api:app --host 127.0.0.1 --port 8000
-curl -X POST http://127.0.0.1:8000/predict -F "file=@docs/example-defective.png"
+curl -X POST "http://127.0.0.1:8000/predict?model=resnet18_frozen_logistic" -F "file=@docs/example-defective.png"
+curl -X POST "http://127.0.0.1:8000/predict?model=pixels_logistic" -F "file=@docs/example-defective.png"
 ```
 
-`GET /health` checks startup; `/docs` provides the interactive API. `POST /predict` returns the label, defect score, threshold, and latency. Uploads accept PNG/JPEG up to 10 MiB and 20 megapixels. Invalid images return 400, oversized uploads 413, and missing files 422. The model is checked and warmed up at startup; CPU threads and concurrent inference are bounded. Authentication and global rate limiting are outside the prototype scope. Artifact paths are configurable through `MODEL_PATH` and `METADATA_PATH`.
+`GET /health` checks startup; `GET /models` lists model IDs and thresholds; `/docs` provides the interactive API with a model dropdown. The `/predict` query parameter `model` accepts `resnet18_frozen_logistic` (default) or `pixels_logistic`. `POST /predict` returns the label, defect score, threshold, and latency. Uploads accept PNG/JPEG up to 10 MiB and 20 megapixels. Invalid images return 400, oversized uploads 413, and missing files 422. The model is checked and warmed up at startup; CPU threads and concurrent inference are bounded. Authentication and global rate limiting are outside the prototype scope. Artifact paths are configurable through `MODEL_PATH`, `METADATA_PATH`, and `BASELINE_PATH`.
 
 ```bash
 docker build -t casting-defect-ml .
@@ -123,8 +126,8 @@ Verification recorded on **17 October 2026**:
 
 | Check | Result |
 |---|---|
-| Automated tests | 16 passed locally; GitHub automated tests passed. |
-| Public deployment and uploads | Normal and defective images passed example buttons and file uploads; invalid images were rejected. No browser, network, or HTTP errors were recorded. |
+| Automated tests | 23 passed locally, including both model choices, baseline export/checksum validation, invalid model rejection, and prediction parity. |
+| Public deployment and uploads | Both models were exercised with normal and defective uploads; outputs match saved model predictions, including the baseline false alarm on the acceptable example. Invalid images were rejected. No browser, network, or HTTP errors were recorded. |
 | Model artifacts | All saved model hashes match committed files; the public ONNX checksum matches the local model. |
 | Evaluation | All 715 test images were replayed. Both models reproduce the original confusion matrices; saved metrics agree within 1e-8 and seeded bootstrap intervals reproduce. |
 | Dataset integrity | All 7,348 source-file and decoded-pixel hashes match the manifest. |
