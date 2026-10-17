@@ -96,12 +96,9 @@ Saved artifacts are `artifacts/model.pt`, `artifacts/baseline.npz`, `artifacts/m
 ```bash
 python -m pip install -r requirements-dev.txt
 python -m pytest -q
-python -m scripts.verify_evaluation --dataset-root /path/to/casting_data/casting_data
-python -m scripts.browser_smoke --url https://abdullah-sarwar-mirza.github.io/casting-defect-ml-assessment/ --live
-python -m scripts.generate_report
 ```
 
-The evaluation replay requires a Git clone and the external dataset. Browser checks use installed Microsoft Edge or Playwright Chromium (`python -m playwright install chromium`). The report generator reads saved evaluation and verification records.
+The tests use the saved artifacts. The baseline replay test also requires the external dataset.
 
 ## Inference API and Docker
 
